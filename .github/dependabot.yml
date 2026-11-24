@@ -10,11 +10,21 @@ updates:
         patterns:
           - react
           - react-dom
+      tailwind:
+        patterns:
+          - tailwindcss
+          - '@tailwindcss/postcss'
     ignore:
       - dependency-name: '@types/node'
         update-types:
           - version-update:semver-major
       - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
+      - dependency-name: lucide-react
+        update-types:
+          - version-update:semver-major
+      - dependency-name: typescript
         update-types:
           - version-update:semver-major
 
