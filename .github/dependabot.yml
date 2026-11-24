@@ -15,16 +15,8 @@ updates:
           - tailwindcss
           - '@tailwindcss/postcss'
     ignore:
-      - dependency-name: '@types/node'
-        update-types:
-          - version-update:semver-major
-      - dependency-name: eslint
-        update-types:
-          - version-update:semver-major
-      - dependency-name: lucide-react
-        update-types:
-          - version-update:semver-major
-      - dependency-name: typescript
+      # Major upgrades need a deliberate migration, not an automated merge.
+      - dependency-name: '*'
         update-types:
           - version-update:semver-major
 
