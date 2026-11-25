@@ -102,8 +102,7 @@ export function TVShowsTab({
               'Genre',
               genres.map((g) => ({ value: g.id, label: g.label })),
               genreId,
-              setGenreId,
-              true
+              setGenreId
             ),
             facet(
               'origin',
@@ -125,8 +124,7 @@ export function TVShowsTab({
                 ),
               ],
               year,
-              setYear,
-              true
+              setYear
             ),
           ]}
         />

@@ -591,7 +591,7 @@ export default function Home() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 md:ml-20 flex flex-col min-h-screen relative overflow-x-hidden">
+      <div className="flex-1 md:ml-20 flex flex-col min-h-screen relative overflow-x-clip">
         {/* Top Navbar */}
         <TopNavbar
           activeTab={activeTab}
@@ -610,7 +610,7 @@ export default function Home() {
         {/* Tab Views */}
         <main className="flex-1">
           {activeTab === 'home' && (
-            <div className="space-y-2 pb-16">
+            <div className="pb-24">
               {isInitialLoading && <HomeSkeleton />}
               {!isInitialLoading && <>
               {/* Top Hero Carousel with All Latest Movies */}
@@ -624,7 +624,7 @@ export default function Home() {
 
               {/* Row 1: Continue Watching for User */}
               {continueWatchingItems.length > 0 && (
-              <div className="-mt-16 md:-mt-24 relative z-20">
+              <div className="relative z-20 pt-2">
                 <MovieRow
                   title="Continue Watching"
                   items={continueWatchingItems}
@@ -640,7 +640,7 @@ export default function Home() {
               )}
 
               {/* Top 10 Movies Today */}
-              <div className="relative z-20 pt-4 md:pt-6">
+              <div className="relative z-20">
                 <Top10Row
                   title="Top 10 Movies Today"
                   items={visibleTop10Movies.length > 0 ? visibleTop10Movies : fallbackTop10Movies}

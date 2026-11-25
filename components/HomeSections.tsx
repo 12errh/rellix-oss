@@ -35,7 +35,7 @@ export function HomeSections({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {sections.map(({ section, rails }) => {
         const limit = section.defaultVisible ?? 4;
         const isExpanded = expanded[section.id] ?? false;
@@ -49,22 +49,22 @@ export function HomeSections({
         return (
           <section key={section.id} aria-label={section.title}>
             {section.title !== 'For You' && (
-              <header className="mb-3 flex items-baseline justify-between gap-4 px-6 md:px-16">
+              <header className="mb-0 mt-10 flex items-baseline justify-between gap-4 border-b border-white/10 px-6 pb-2.5 md:px-16">
                 <div className="min-w-0">
-                  <h2 className="truncate text-base font-bold tracking-tight text-white md:text-lg">
+                  <h2 className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8a8a8a]">
                     {section.title}
                   </h2>
                   {section.subtitle && (
-                    <p className="mt-0.5 truncate text-xs text-[#737373]">{section.subtitle}</p>
+                    <p className="mt-1 truncate text-[11px] text-[#5f5f5f]">{section.subtitle}</p>
                   )}
                 </div>
-                <span className="shrink-0 text-xs tabular-nums text-[#525252]">
+                <span className="shrink-0 text-[10px] uppercase tracking-[0.14em] tabular-nums text-[#525252]">
                   {rails.length} {noun}
                 </span>
               </header>
             )}
 
-            <div className="space-y-6">
+            <div>
               {visible.map((rail) => (
                 <MediaRail
                   key={rail.id}
@@ -83,16 +83,16 @@ export function HomeSections({
             </div>
 
             {collapsible && (
-              <div className="mt-4 px-6 md:px-16">
+              <div className="px-6 md:px-16">
                 <button
                   onClick={() =>
                     setExpanded((prev) => ({ ...prev, [section.id]: !isExpanded }))
                   }
                   aria-expanded={isExpanded}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2 text-xs font-semibold text-[#d4d4d4] transition hover:border-white/50 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E50914]"
+                  className="inline-flex items-center gap-1.5 py-3 text-[10px] font-medium uppercase tracking-[0.16em] text-[#8a8a8a] transition-colors hover:text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50"
                 >
                   {isExpanded ? 'Show less' : `Show ${hiddenCount} more ${noun}`}
-                  <span aria-hidden className="text-[10px]">
+                  <span aria-hidden className="text-[8px]">
                     {isExpanded ? '▲' : '▼'}
                   </span>
                 </button>

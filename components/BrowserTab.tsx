@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
 import { MediaItem } from '@/types/movie';
 import { MovieCard } from './MovieCard';
 import { usePagedFeed } from '@/hooks/use-paged-feed';
@@ -30,24 +29,74 @@ const SORTS = [
   { id: 'newest', label: 'Newest' },
 ] as const;
 
-const GENRES = [
-  { id: '', label: 'All Genres' },
+interface GenreOption {
+  id: string;
+  label: string;
+}
+
+/**
+ * TMDB genre ids are per media kind. The old Browse tab handed the movie list
+ * to TV and anime queries too, so picking "Action" on TV sent `with_genres=28`,
+ * which is not a TV genre: TMDB ignored it and the filter looked broken.
+ */
+const MOVIE_GENRES: GenreOption[] = [
+  { id: '', label: 'All genres' },
   { id: '28', label: 'Action' },
+  { id: '12', label: 'Adventure' },
+  { id: '16', label: 'Animation' },
   { id: '35', label: 'Comedy' },
+  { id: '80', label: 'Crime' },
+  { id: '99', label: 'Documentary' },
   { id: '18', label: 'Drama' },
+  { id: '10751', label: 'Family' },
+  { id: '14', label: 'Fantasy' },
+  { id: '36', label: 'History' },
   { id: '27', label: 'Horror' },
+  { id: '10402', label: 'Music' },
+  { id: '9648', label: 'Mystery' },
   { id: '10749', label: 'Romance' },
   { id: '878', label: 'Sci-Fi' },
   { id: '53', label: 'Thriller' },
+  { id: '10752', label: 'War' },
+  { id: '37', label: 'Western' },
+];
+
+const TV_GENRES: GenreOption[] = [
+  { id: '', label: 'All genres' },
+  { id: '10759', label: 'Action & Adventure' },
   { id: '16', label: 'Animation' },
+  { id: '35', label: 'Comedy' },
+  { id: '80', label: 'Crime' },
   { id: '99', label: 'Documentary' },
+  { id: '18', label: 'Drama' },
   { id: '10751', label: 'Family' },
+  { id: '10762', label: 'Kids' },
   { id: '9648', label: 'Mystery' },
+  { id: '10765', label: 'Sci-Fi & Fantasy' },
+  { id: '10766', label: 'Soap' },
+  { id: '10768', label: 'War & Politics' },
+  { id: '37', label: 'Western' },
+];
+
+/** Anime queries already force genre 16, so only TV genres that co-occur with it. */
+const ANIME_GENRES: GenreOption[] = [
+  { id: '', label: 'All genres' },
+  { id: '10759', label: 'Action & Adventure' },
+  { id: '35', label: 'Comedy' },
+  { id: '18', label: 'Drama' },
+  { id: '10765', label: 'Sci-Fi & Fantasy' },
+  { id: '9648', label: 'Mystery' },
+  { id: '10751', label: 'Family' },
   { id: '80', label: 'Crime' },
 ];
 
-const LANGS: { id: string; label: string }[] = [
-  { id: '', label: 'Any Language' },
+interface PairOption {
+  id: string;
+  label: string;
+}
+
+const LANGS: PairOption[] = [
+  { id: '', label: 'Any language' },
   { id: 'en', label: 'English' },
   { id: 'hi', label: 'Hindi' },
   { id: 'ko', label: 'Korean' },
@@ -56,8 +105,8 @@ const LANGS: { id: string; label: string }[] = [
   { id: 'fr', label: 'French' },
 ];
 
-const COUNTRIES: { id: string; label: string }[] = [
-  { id: '', label: 'Any Country' },
+const COUNTRIES: PairOption[] = [
+  { id: '', label: 'Any country' },
   { id: 'US', label: 'USA' },
   { id: 'IN', label: 'India' },
   { id: 'KR', label: 'Korea' },
@@ -66,16 +115,21 @@ const COUNTRIES: { id: string; label: string }[] = [
   { id: 'FR', label: 'France' },
 ];
 
-const RATINGS = [
-  { id: '', label: 'Any Rating' },
-  { id: 'ALL', label: 'ALL' },
+const RATINGS: PairOption[] = [
+  { id: '', label: 'Any rating' },
+  { id: 'ALL', label: 'All ages' },
   { id: '7+', label: '7+' },
   { id: '13+', label: '13+' },
   { id: '16+', label: '16+' },
-  { id: '18+', label: '18+' },
 ];
 
 const YEARS = ['', ...Array.from({ length: 12 }, (_, i) => String(new Date().getFullYear() - i))];
+
+const GENRES_BY_TYPE: Record<'movie' | 'tv' | 'anime', GenreOption[]> = {
+  movie: MOVIE_GENRES,
+  tv: TV_GENRES,
+  anime: ANIME_GENRES,
+};
 
 export function BrowserTab({ onPlay, onOpenDetails, myListIds, onToggleMyList, isKid = false }: BrowserTabProps) {
   const [type, setType] = useState<'movie' | 'tv' | 'anime'>('movie');
@@ -122,112 +176,119 @@ export function BrowserTab({ onPlay, onOpenDetails, myListIds, onToggleMyList, i
     setRating('');
   };
 
-  return (
-    <div className="space-y-6 select-none">
-      {/* Sticky Filter Bar — same component as the Movies / TV / Anime tabs */}
-      <div className="sticky top-16 z-20 border-b border-white/10 bg-[#111111]/95 px-6 py-4 backdrop-blur-md md:px-16">
-        <div className="flex items-center gap-2 pb-3">
-          <SlidersHorizontal className="h-4 w-4 text-[#E50914]" />
-          <span className="text-xs font-bold uppercase tracking-widest text-white">Browse</span>
-        </div>
+  const changeType = (next: 'movie' | 'tv' | 'anime') => {
+    setType(next);
+    // Genre ids differ per media kind; keep the selection only if the new list
+    // has it. Anime also needs a Japanese original language to be anime at all.
+    const stillValid = GENRES_BY_TYPE[next].some((g) => g.id === genre);
+    if (!stillValid) setGenre('');
+    if (next === 'anime' && lang === '') setLang('ja');
+    if (next !== 'anime' && lang === 'ja') setLang('');
+  };
 
-        <div>
-          <BrowseFilterBar
-            resultCount={items.length}
-            loading={isLoadingFirst}
-            totalLabel={hasActiveFilters ? 'filtered' : 'popular right now'}
-            showClear={hasActiveFilters}
-            onClear={resetAll}
-            facets={[
-              // Switching type resets the genre list, and defaults anime to
-              // Japanese so the results are actually anime.
-              facet(
-                'type',
-                'Type',
-                TYPES.map((t) => ({ value: t.id, label: t.label })),
-                type,
-                (v) => {
-                  setType(v as 'movie' | 'tv' | 'anime');
-                  setGenre('');
-                  if (v === 'anime' && lang === '') setLang('ja');
-                  if (v !== 'anime' && lang === 'ja') setLang('');
-                },
-                true
-              ),
-              facet(
-                'sort',
-                'Sort',
-                SORTS.map((s) => ({ value: s.id, label: s.label })),
-                sort,
-                (v) => setSort(v as 'popular' | 'top_rated' | 'newest'),
-                true
-              ),
-            ]}
-            advancedFacets={[
-              facet(
-                'genre',
-                'Genre',
-                GENRES.map((g) => ({ value: g.id, label: g.label })),
-                genre,
-                setGenre,
-                true
-              ),
-              facet(
-                'year',
-                'Year',
-                [{ value: '', label: 'Any Year' }, ...YEARS.filter(Boolean).map((y) => ({ value: y, label: y }))],
-                year,
-                setYear,
-                true
-              ),
-              facet(
-                'lang',
-                'Language',
-                LANGS.map((l) => ({ value: l.id, label: l.label })),
-                lang,
-                setLang,
-                true
-              ),
-              facet(
-                'country',
-                'Country',
-                COUNTRIES.map((c) => ({ value: c.id, label: c.label })),
-                country,
-                setCountry,
-                true
-              ),
-              ...(isKid
-                ? []
-                : [
-                    facet(
-                      'rating',
-                      'Rating',
-                      RATINGS.map((r) => ({ value: r.id, label: r.label })),
-                      rating,
-                      setRating,
-                      true
-                    ),
-                  ]),
-            ]}
-          />
-        </div>
+  return (
+    <div className="select-none pb-12">
+      <div className="px-6 pt-8 pb-5 md:px-16">
+        <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[#E50914]">
+          Catalogue
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white md:text-4xl">
+          Browse
+        </h1>
       </div>
 
-      {/* Results */}
-      <div className="px-6 md:px-16">
+      <div className="sticky top-16 z-30 bg-[#111111]/95 px-6 py-3 backdrop-blur-md md:px-16">
+        <BrowseFilterBar
+          resultCount={items.length}
+          loading={isLoadingFirst}
+          showClear={hasActiveFilters}
+          onClear={resetAll}
+          facets={[
+            facet(
+              'type',
+              'Type',
+              TYPES.map((t) => ({ value: t.id, label: t.label })),
+              type,
+              (v) => changeType(v as 'movie' | 'tv' | 'anime')
+            ),
+            facet(
+              'genre',
+              'Genre',
+              GENRES_BY_TYPE[type].map((g) => ({ value: g.id, label: g.label })),
+              genre,
+              setGenre
+            ),
+            facet(
+              'year',
+              'Year',
+              [
+                { value: '', label: 'Any year' },
+                ...YEARS.filter(Boolean).map((y) => ({ value: y, label: y })),
+              ],
+              year,
+              setYear
+            ),
+            facet(
+              'sort',
+              'Sort',
+              SORTS.map((s) => ({ value: s.id, label: s.label })),
+              sort,
+              (v) => setSort(v as 'popular' | 'top_rated' | 'newest')
+            ),
+            facet(
+              'lang',
+              'Language',
+              LANGS.map((l) => ({ value: l.id, label: l.label })),
+              lang,
+              setLang
+            ),
+            facet(
+              'country',
+              'Country',
+              COUNTRIES.map((c) => ({ value: c.id, label: c.label })),
+              country,
+              setCountry
+            ),
+            ...(isKid
+              ? []
+              : [
+                  facet(
+                    'rating',
+                    'Rating',
+                    RATINGS.map((r) => ({ value: r.id, label: r.label })),
+                    rating,
+                    setRating
+                  ),
+                ]),
+          ]}
+        />
+      </div>
+
+      <div className="px-6 pt-6 md:px-16">
         {items.length === 0 && isLoadingFirst ? (
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
-              <div key={i} className="aspect-[2/3] animate-pulse rounded-md bg-[#1f1f1f]" />
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {Array.from({ length: 12 }, (_, i) => (
+              <div key={i} className="aspect-[2/3] animate-pulse rounded-[3px] bg-[#1b1b1b]" />
             ))}
           </div>
         ) : items.length === 0 && !isLoadingMore ? (
-          <div className="py-20 text-center text-[#737373]">
-            <p className="text-base font-semibold text-white mb-1">No titles match these filters</p>
-            <p className="text-xs">Try widening the year, language, or rating filters.</p>
+          <div className="border border-white/[0.08] px-6 py-16 text-center">
+            <p className="text-base font-medium text-white">No titles match these filters</p>
+            <p className="mt-1 text-xs text-[#8a8a8a]">
+              Try widening the year, language or rating.
+            </p>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetAll}
+                className="mt-5 border border-white/20 px-4 py-2 text-[10px] font-medium uppercase tracking-[0.16em] text-white transition-colors hover:border-white/50"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {items.map((item) => (
               <MovieCard
                 variant="grid"

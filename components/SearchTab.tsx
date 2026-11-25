@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, Film, Tv, Orbit, Loader2, X, Clock, Trash2 } from 'lucide-react';
+import { Search, Film, Tv, Orbit, Loader2, X, Clock, Trash2, ArrowRight } from 'lucide-react';
 import { MediaItem } from '@/types/movie';
 import { MovieCard } from './MovieCard';
 import { LoadMoreSentinel } from './LoadMoreSentinel';
@@ -86,6 +86,12 @@ export function SearchTab({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const suggestRef = useRef<HTMLDivElement>(null);
+  /**
+   * True only while the user is editing the input. Programmatic queries (a
+   * recent/trending chip) must not reopen the dropdown on top of the results
+   * they just triggered.
+   */
+  const editingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -247,7 +253,7 @@ export function SearchTab({
         const data = await res.json();
         const items: MediaItem[] = Array.isArray(data.items) ? data.items : [];
         setSuggestions(items);
-        setShowSuggestions(items.length > 0);
+        setShowSuggestions(items.length > 0 && editingRef.current);
         setHighlight(-1);
       } catch (err: any) {
         if (err?.name !== 'AbortError') {
@@ -286,9 +292,12 @@ export function SearchTab({
    * suggestions are invalidated so refocusing the input cannot reopen the
    * dropdown on top of the results.
    */
-  const runSearch = useCallback(async () => {
-    const q = query.trim();
-    if (!q) return;
+  const runSearch = useCallback(
+    async (queryOverride?: string) => {
+      const q = (queryOverride ?? query).trim();
+      if (!q) return;
+      editingRef.current = false;
+      if (queryOverride !== undefined) setQuery(queryOverride);
 
     searchAbortRef.current?.abort();
     const controller = new AbortController();
@@ -498,24 +507,32 @@ export function SearchTab({
   };
 
   return (
-    <div className="px-6 md:px-16 py-8 space-y-6 select-none">
+    <div className="space-y-5 px-6 pt-8 pb-12 select-none md:px-16">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Search</h1>
-        <p className="text-xs text-[#8c8c8c] mt-1">Find movies, TV shows, and anime across the catalogue.</p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#E50914]">
+          Discover
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white md:text-4xl">
+          Search
+        </h1>
+        <p className="mt-2 text-xs text-[#8a8a8a]">
+          Titles, people, genres — a misspelled title still finds its way home.
+        </p>
       </div>
 
       {/* Search Input Bar */}
-      <div className="max-w-3xl relative">
-        <div className="relative flex items-center gap-3 bg-[#1b1b1b] border border-white/10 rounded-2xl px-4 py-4 shadow-2xl focus-within:border-[#E50914] focus-within:shadow-[0_0_0_4px_rgba(229,9,20,0.12)] transition-all">
-          <div className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-            <Search className="w-4 h-4 text-[#a3a3a3]" />
-          </div>
+      <div className="relative max-w-2xl">
+        <div className="relative flex items-center gap-3 border border-white/[0.12] bg-[#151515] px-4 py-3.5 transition-colors focus-within:border-white/35">
+          <Search className="h-4 w-4 shrink-0 text-[#8a8a8a]" />
           <input
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              editingRef.current = true;
+              setQuery(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (showSuggestions && suggestions.length > 0) {
                 if (e.key === 'ArrowDown') {
@@ -555,12 +572,13 @@ export function SearchTab({
             onFocus={() => {
               if (query.trim().length >= 2 && suggestions.length > 0) setShowSuggestions(true);
             }}
-            placeholder="Titles, people, genres..."
+            placeholder="Search titles, people, genres"
             autoFocus
-            className="bg-transparent text-white placeholder-[#737373] text-sm md:text-lg focus:outline-none w-full"
+            aria-label="Search titles, people, genres"
+            className="w-full bg-transparent text-[15px] text-white placeholder-[#6f6f6f] focus:outline-none md:text-base"
           />
           {isSearching && (
-            <Loader2 className="w-4 h-4 text-[#E50914] animate-spin shrink-0" />
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#E50914]" />
           )}
           {query && (
             <button
@@ -576,17 +594,18 @@ export function SearchTab({
                 setSubmittedQuery('');
                 setIsSearching(false);
               }}
-              className="w-7 h-7 rounded-full bg-white/10 text-[#a3a3a3] hover:text-white text-xs flex items-center justify-center"
+              aria-label="Clear search"
+              className="flex h-6 w-6 shrink-0 items-center justify-center text-[#8a8a8a] transition-colors hover:text-white"
             >
-              ✕
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
 
         {/* Autocomplete dropdown: guessed titles with posters, click to open */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-[#141414] shadow-2xl">
-            <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#6b6b6b]">
+          <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden border border-white/[0.12] bg-[#131313] shadow-[0_24px_60px_rgba(0,0,0,0.6)]">
+            <p className="px-4 pt-3 pb-1.5 text-[9px] font-medium uppercase tracking-[0.2em] text-[#6f6f6f]">
               Suggestions · Movie / TV / Anime
             </p>
             <div ref={suggestRef} className="no-scrollbar max-h-[380px] overflow-y-auto">
@@ -600,42 +619,45 @@ export function SearchTab({
                     chooseSuggestion(s);
                   }}
                   onMouseEnter={() => setHighlight(i)}
-                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                    i === highlight ? 'bg-[#E50914]/15' : 'hover:bg-white/5'
+                  className={`flex w-full items-center gap-3 border-l-2 px-4 py-2.5 text-left transition-colors ${
+                    i === highlight
+                      ? 'border-[#E50914] bg-white/[0.06]'
+                      : 'border-transparent hover:bg-white/[0.04]'
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={s.posterUrl}
                     alt=""
-                    className="h-16 w-11 shrink-0 rounded object-cover bg-[#1f1f1f]"
+                    className="h-[60px] w-10 shrink-0 rounded-[2px] bg-[#1c1c1c] object-cover"
                     loading="lazy"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-white">{s.title}</p>
-                    <p className="mt-0.5 text-[11px] text-[#8c8c8c]">
-                      {s.releaseYear} • {s.type === 'anime' ? 'Anime' : s.type === 'tv' ? 'TV Show' : 'Movie'}
-                      {s.genres.length > 0 ? ` • ${s.genres.slice(0, 2).join(', ')}` : ''}
+                    <p className="truncate text-[13px] font-medium text-white">{s.title}</p>
+                    <p className="mt-0.5 truncate text-[10px] uppercase tracking-[0.12em] text-[#7a7a7a]">
+                      {s.releaseYear} · {s.type === 'anime' ? 'Anime' : s.type === 'tv' ? 'TV' : 'Film'}
+                      {s.genres.length > 0 ? ` · ${s.genres.slice(0, 2).join(', ')}` : ''}
                     </p>
                   </div>
-                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-[#E50914]/80">
+                  <span className="shrink-0 text-[9px] uppercase tracking-[0.18em] text-[#5f5f5f]">
                     Open
                   </span>
                 </button>
               ))}
             </div>
-            <div className="border-t border-white/10 bg-[#0f0f0f]">
+            <div className="border-t border-white/[0.08]">
               <button
                 onMouseDown={(e) => {
                   e.preventDefault();
                   runSearch();
                 }}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#E50914]/10"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.05]"
               >
-                <Search className="h-4 w-4 shrink-0 text-[#E50914]" />
-                <span className="min-w-0 flex-1 truncate text-sm text-white">
-                  Search for <span className="font-bold text-[#d4d4d4]">“{query.trim()}”</span>
+                <Search className="h-3.5 w-3.5 shrink-0 text-[#8a8a8a]" />
+                <span className="min-w-0 flex-1 truncate text-[13px] text-[#b8b8b8]">
+                  Search for <span className="text-white">“{query.trim()}”</span>
                 </span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#5f5f5f]" />
               </button>
             </div>
           </div>
@@ -644,38 +666,40 @@ export function SearchTab({
 
       {/* Recent Searches */}
       {recentSearches.length > 0 && !query.trim() && (
-        <div className="flex items-center flex-wrap gap-2">
-          <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-[#737373] mr-1">
-            <Clock className="w-3 h-3" /> Recent
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          <span className="mr-1 flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[0.2em] text-[#6f6f6f]">
+            <Clock className="h-3 w-3" /> Recent
           </span>
           {recentSearches.map((r) => (
             <button
               key={r}
-              onClick={() => setQuery(r)}
-              className="px-3.5 py-1.5 rounded-full text-xs bg-[#1f1f1f] border border-white/10 text-[#d4d4d4] hover:border-[#E50914]/60 hover:text-white hover:bg-[#E50914]/10 transition-all"
+              onClick={() => runSearch(r)}
+              className="rounded-[2px] border border-white/[0.12] px-3 py-1.5 text-xs text-[#b0b0b0] transition-colors hover:border-white/40 hover:text-white"
             >
               {r}
             </button>
           ))}
           <button
             onClick={clearRecent}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] text-[#737373] hover:text-red-400 transition-colors"
+            className="flex items-center gap-1 px-1.5 py-1 text-[10px] uppercase tracking-[0.14em] text-[#5f5f5f] transition-colors hover:text-[#E50914]"
             title="Clear search history"
           >
-            <Trash2 className="w-3 h-3" /> Clear history
+            <Trash2 className="h-3 w-3" /> Clear
           </button>
         </div>
       )}
 
       {/* Trending Chips */}
       {!query.trim() && trendingChips.length > 0 && (
-        <div className="flex items-center flex-wrap gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-widest text-[#737373] mr-1">Trending</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          <span className="mr-1 text-[9px] font-medium uppercase tracking-[0.2em] text-[#6f6f6f]">
+            Trending
+          </span>
           {trendingChips.map((m) => (
             <button
               key={m.id}
-              onClick={() => setQuery(m.title)}
-              className="px-3.5 py-1.5 rounded-full text-xs bg-[#E50914]/10 border border-[#E50914]/30 text-white hover:bg-[#E50914]/20 transition-all"
+              onClick={() => runSearch(m.title)}
+              className="rounded-[2px] border border-white/[0.12] px-3 py-1.5 text-xs text-[#b0b0b0] transition-colors hover:border-[#E50914]/60 hover:text-white"
             >
               {m.title}
             </button>
@@ -688,17 +712,16 @@ export function SearchTab({
           grid that would be racing the dropdown for attention. It sits OUTSIDE
           the grid-surfaces gate below: the two are mutually exclusive. */}
       {!idleBrowse && !resultsActive && (
-        <div className="min-h-[200px] rounded-2xl border border-white/10 bg-[#161616]/60 px-6 py-12 text-center">
-          <p className="text-sm font-semibold text-white">
+        <div className="border border-white/[0.1] bg-[#141414] px-6 py-14 text-center">
+          <p className="text-[15px] font-medium text-white">
             {isSearching ? `Searching for “${query.trim()}”…` : `Search for “${query.trim()}”`}
           </p>
-          <p className="mt-2 text-xs text-[#8c8c8c]">
+          <p className="mt-2 text-[11px] text-[#8a8a8a]">
             Press{' '}
-            <kbd className="rounded border border-white/10 bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-[#d4d4d4]">
+            <kbd className="border border-white/15 bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-[#c8c8c8]">
               Enter
             </kbd>{' '}
-            to run the full search — or pick a suggestion above to open a title
-            directly.
+            to run the full search — or pick a suggestion above to open a title directly.
           </p>
         </div>
       )}
@@ -709,73 +732,80 @@ export function SearchTab({
       {(idleBrowse || resultsActive) && (
         <>
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
+      <div className="no-scrollbar flex items-center gap-6 overflow-x-auto border-b border-white/[0.08]">
         <button
           onClick={() => applyFilter('all')}
-          className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+          aria-pressed={filterType === 'all'}
+          className={`-mb-px flex items-center gap-1.5 border-b-2 pb-2.5 pt-1 text-[11px] uppercase tracking-[0.16em] transition-colors ${
             filterType === 'all'
-              ? 'bg-white text-black border-white'
-              : 'bg-[#222222] text-[#cccccc] border-white/10 hover:border-white/30'
+              ? 'border-[#E50914] text-white'
+              : 'border-transparent text-[#7a7a7a] hover:text-white'
           }`}
         >
-          All Results ({displayMedia.length})
+          All Results
+          <span className="text-[9px] text-[#5f5f5f]">{displayMedia.length}</span>
         </button>
         <button
           onClick={() => applyFilter('movie')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+          aria-pressed={filterType === 'movie'}
+          className={`-mb-px flex items-center gap-1.5 border-b-2 pb-2.5 pt-1 text-[11px] uppercase tracking-[0.16em] transition-colors ${
             filterType === 'movie'
-              ? 'bg-white text-black border-white'
-              : 'bg-[#222222] text-[#cccccc] border-white/10 hover:border-white/30'
+              ? 'border-[#E50914] text-white'
+              : 'border-transparent text-[#7a7a7a] hover:text-white'
           }`}
         >
-          <Film className="w-3.5 h-3.5" />
-          <span>Movies</span>
+          <Film className="h-3 w-3" />
+          Movies
         </button>
         <button
           onClick={() => applyFilter('tv')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+          aria-pressed={filterType === 'tv'}
+          className={`-mb-px flex items-center gap-1.5 border-b-2 pb-2.5 pt-1 text-[11px] uppercase tracking-[0.16em] transition-colors ${
             filterType === 'tv'
-              ? 'bg-white text-black border-white'
-              : 'bg-[#222222] text-[#cccccc] border-white/10 hover:border-white/30'
+              ? 'border-[#E50914] text-white'
+              : 'border-transparent text-[#7a7a7a] hover:text-white'
           }`}
         >
-          <Tv className="w-3.5 h-3.5" />
-          <span>TV Shows</span>
+          <Tv className="h-3 w-3" />
+          TV Shows
         </button>
         <button
           onClick={() => applyFilter('anime')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+          aria-pressed={filterType === 'anime'}
+          className={`-mb-px flex items-center gap-1.5 border-b-2 pb-2.5 pt-1 text-[11px] uppercase tracking-[0.16em] transition-colors ${
             filterType === 'anime'
-              ? 'bg-white text-black border-white'
-              : 'bg-[#222222] text-[#cccccc] border-white/10 hover:border-white/30'
+              ? 'border-[#E50914] text-white'
+              : 'border-transparent text-[#7a7a7a] hover:text-white'
           }`}
         >
-          <Orbit className="w-3.5 h-3.5 text-[#E50914]" />
-          <span>Anime</span>
+          <Orbit className="h-3 w-3" />
+          Anime
         </button>
       </div>
 
       {/* Genre Chips */}
       {availableGenres.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <div className="no-scrollbar flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setGenreFilter(null)}
-            className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-all ${
+            aria-pressed={genreFilter === null}
+            className={`rounded-[2px] border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] transition-colors ${
               genreFilter === null
-                ? 'bg-[#E50914] text-white border-[#E50914]'
-                : 'bg-[#1f1f1f] text-[#a3a3a3] border-white/10 hover:border-white/30'
+                ? 'border-[#E50914] bg-[#E50914]/10 text-white'
+                : 'border-white/[0.1] text-[#8a8a8a] hover:border-white/30 hover:text-white'
             }`}
           >
-            All Genres
+            All genres
           </button>
           {availableGenres.map((g) => (
             <button
               key={g}
               onClick={() => setGenreFilter(genreFilter === g ? null : g)}
-              className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-all whitespace-nowrap ${
+              aria-pressed={genreFilter === g}
+              className={`whitespace-nowrap rounded-[2px] border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] transition-colors ${
                 genreFilter === g
-                  ? 'bg-[#E50914] text-white border-[#E50914]'
-                  : 'bg-[#1f1f1f] text-[#a3a3a3] border-white/10 hover:border-white/30'
+                  ? 'border-[#E50914] bg-[#E50914]/10 text-white'
+                  : 'border-white/[0.1] text-[#8a8a8a] hover:border-white/30 hover:text-white'
               }`}
             >
               {g}
@@ -786,45 +816,68 @@ export function SearchTab({
 
       {/* Results */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[#8c8c8c]">
-            {query
-              ? `Results for "${query}"`
-              : 'Explore Complete Catalogue'}{' '}
-            ({displayMedia.length})
+        <div className="flex items-baseline justify-between gap-4 border-b border-white/[0.08] pb-2.5">
+          <h3 className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#8a8a8a]">
+            {query ? `Results for “${query}”` : 'Complete catalogue'}
           </h3>
-          {liveResults.length > 0 && (
-            <span className="text-xs text-green-400 font-medium">Live TMDB results</span>
-          )}
+          <div className="flex shrink-0 items-center gap-3">
+            {liveResults.length > 0 && (
+              <span className="border border-white/10 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.16em] text-[#8a8a8a]">
+                Live
+              </span>
+            )}
+            <span className="text-[10px] text-[#5f5f5f]">
+              {displayMedia.length} {displayMedia.length === 1 ? 'title' : 'titles'}
+            </span>
+          </div>
         </div>
 
         {/* Top Match */}
         {topMatch && query.trim() && (
-          <div className="mb-6 flex flex-col sm:flex-row gap-4 p-4 bg-[#1a1a1a] border border-white/10 rounded-xl">
+          <div className="mt-4 mb-6 flex flex-col gap-5 border border-white/[0.1] bg-[#141414] p-4 sm:flex-row sm:p-5">
             <div
               onClick={() => onOpenDetails(topMatch)}
-              className="relative w-32 sm:w-40 aspect-[2/3] rounded-lg overflow-hidden shrink-0 cursor-pointer"
+              className="relative aspect-[2/3] w-32 shrink-0 cursor-pointer overflow-hidden rounded-[3px] bg-[#1c1c1c] sm:w-[150px]"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={topMatch.posterUrl} alt={topMatch.title} className="w-full h-full object-cover" />
+              <img src={topMatch.posterUrl} alt={topMatch.title} className="h-full w-full object-cover" />
             </div>
-            <div className="flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#E50914]">Top Match</span>
-              <h4 className="text-xl font-black text-white mt-1">{topMatch.title}</h4>
-              <p className="text-xs text-[#a3a3a3] mt-1">
-                {topMatch.releaseYear} • {topMatch.type === 'movie' ? topMatch.duration : `${topMatch.seasonsCount || 1} ${(topMatch.seasonsCount || 1) === 1 ? 'Season' : 'Seasons'}`} • {topMatch.rating}
+            <div className="min-w-0 flex-1">
+              <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-[#E50914]">
+                Top match
+              </span>
+              <h4 className="mt-1.5 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
+                {topMatch.title}
+              </h4>
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[10px] uppercase tracking-[0.12em] text-[#8a8a8a]">
+                {[
+                  topMatch.releaseYear,
+                  topMatch.type === 'movie'
+                    ? topMatch.duration || 'Film'
+                    : `${topMatch.seasonsCount || 1} ${(topMatch.seasonsCount || 1) === 1 ? 'Season' : 'Seasons'}`,
+                  topMatch.rating,
+                ]
+                  .filter(Boolean)
+                  .map((part, i) => (
+                    <React.Fragment key={`${part}-${i}`}>
+                      {i > 0 && <span className="text-[#3a3a3a]">/</span>}
+                      <span>{part}</span>
+                    </React.Fragment>
+                  ))}
               </p>
-              <p className="text-sm text-[#cccccc] mt-2 line-clamp-2">{topMatch.overview}</p>
-              <div className="flex gap-3 mt-4">
+              <p className="mt-2.5 line-clamp-3 max-w-2xl text-[13px] leading-relaxed text-[#a8a8a8]">
+                {topMatch.overview}
+              </p>
+              <div className="mt-4 flex gap-2">
                 <button
                   onClick={() => onPlay(topMatch)}
-                  className="px-5 py-2 bg-white text-black text-xs font-bold rounded hover:bg-[#e6e6e6]"
+                  className="rounded-[2px] bg-white px-5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-black transition-colors hover:bg-[#e6e6e6]"
                 >
                   Play
                 </button>
                 <button
                   onClick={() => onOpenDetails(topMatch)}
-                  className="px-5 py-2 bg-white/10 text-white text-xs font-bold rounded hover:bg-white/20 border border-white/10"
+                  className="rounded-[2px] border border-white/20 px-5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-white transition-colors hover:border-white/50"
                 >
                   Details
                 </button>
@@ -834,20 +887,24 @@ export function SearchTab({
         )}
 
         {displayMedia.length === 0 ? (
-          <div className="py-20 text-center text-[#737373]">
-            <p className="text-base font-semibold text-white mb-1">
-              {isSearching ? 'Searching streaming databases...' : 'No matches found'}
+          <div className="mt-4 border border-white/[0.1] bg-[#141414]/60 px-6 py-16 text-center">
+            <p className="text-[15px] font-medium text-white">
+              {isSearching ? 'Searching streaming databases…' : 'No matches found'}
             </p>
-            <p className="text-xs mb-4">Try a different title, genre, or actor.</p>
+            <p className="mt-1.5 text-[11px] text-[#8a8a8a]">
+              {isSearching
+                ? 'Checking the catalogue and TMDB.'
+                : 'Try a different title, genre, or actor.'}
+            </p>
             {/* Typo tolerance: suggest closest matches from the in-app catalog */}
             {!isSearching && query.trim() && (() => {
               const suggestions = fuzzySuggestions(allMedia, query.trim(), 6);
               return suggestions.length > 0 ? (
-                <div className="mt-6">
-                  <p className="text-xs text-[#a3a3a3] mb-3 text-left">
-                    Did you mean any of these?
+                <div className="mt-8 text-left">
+                  <p className="mb-3 text-[9px] font-medium uppercase tracking-[0.2em] text-[#6f6f6f]">
+                    Did you mean
                   </p>
-                  <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                     {suggestions.map((item) => (
                       <MovieCard
                         variant="grid"
@@ -864,12 +921,12 @@ export function SearchTab({
               ) : null;
             })()}
             {!isSearching && trendingChips.length > 0 && (
-              <div className="flex items-center justify-center flex-wrap gap-2">
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
                 {trendingChips.map((m) => (
                   <button
                     key={m.id}
-                    onClick={() => setQuery(m.title)}
-                    className="px-3 py-1 rounded-full text-xs bg-[#E50914]/10 border border-[#E50914]/30 text-white hover:bg-[#E50914]/20"
+                    onClick={() => runSearch(m.title)}
+                    className="rounded-[2px] border border-white/[0.12] px-3 py-1.5 text-xs text-[#b0b0b0] transition-colors hover:border-white/40 hover:text-white"
                   >
                     {m.title}
                   </button>
@@ -878,10 +935,10 @@ export function SearchTab({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {restMatches.map((item) => (
               <MovieCard
-                        variant="grid"
+                variant="grid"
                 key={item.id}
                 item={item}
                 onPlay={onPlay}

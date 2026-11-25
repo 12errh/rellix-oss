@@ -32,36 +32,36 @@ export function MovieCard({
   const match = matchFor(item);
 
   return (
-    <div className={`relative group/card cursor-pointer transition-all duration-300 hover:scale-105 hover:z-30 select-none ${variant === 'grid' ? 'w-full' : 'flex-none w-[140px] sm:w-[170px] md:w-[200px]'}`}>
+    <div className={`relative group/card cursor-pointer transition-transform duration-300 select-none hover:-translate-y-1 hover:z-30 ${variant === 'grid' ? 'w-full' : 'flex-none w-[140px] sm:w-[170px] md:w-[200px]'}`}>
       <div
         onClick={() => onOpenDetails(item)}
-        className="relative aspect-[2/3] w-full rounded-md overflow-hidden bg-[#222222] border border-white/5 group-hover/card:border-white/30 shadow-xl transition-all"
+        className="relative aspect-[2/3] w-full overflow-hidden rounded-[3px] bg-[#1c1c1c] border border-white/[0.07] group-hover/card:border-white/25 transition-colors"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={item.posterUrl}
           alt={item.title}
-          className="w-full h-full object-cover group-hover/card:brightness-105 transition-all duration-300"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-[1.02]"
           loading="lazy"
         />
 
-        {/* N Original logo */}
+        {/* Rellix Original mark */}
         {item.isOriginal && (
-          <div className="absolute top-2 left-2 text-xs font-black text-[#E50914] drop-shadow-md">
-            R
+          <div className="absolute top-2 left-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/85">
+            Rellix
           </div>
         )}
 
-        {/* Continue Watching Progress Bar (matches screenshot row 2) */}
+        {/* Continue Watching progress */}
         {isContinueWatching && item.continueWatchingProgress != null && (
-          <div className="absolute bottom-0 inset-x-0 bg-neutral-900/90 py-1 px-2 flex flex-col gap-1 z-10 border-t border-white/10 pointer-events-none">
-            <div className="w-full bg-[#333333] h-1 rounded-full overflow-hidden">
+          <div className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-sm px-2.5 pt-1.5 pb-2 flex flex-col gap-1.5 z-10 border-t border-white/10 pointer-events-none">
+            <div className="w-full bg-white/15 h-[2px] overflow-hidden">
               <div
-                className="bg-[#E50914] h-full rounded-full transition-all"
+                className="bg-[#E50914] h-full transition-all"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-[10px] text-[#a3a3a3]">
+            <div className="flex items-center justify-between text-[9px] tracking-wide text-[#a3a3a3]">
               <span>{item.type !== 'movie' && item.continueWatchingSeason ? `S${item.continueWatchingSeason}:E${item.continueWatchingEpisode} · Resume` : 'Resume'}</span>
               {item.remainingMinutes != null && <span>{formatRemaining(item.remainingMinutes)} left</span>}
             </div>
@@ -69,22 +69,22 @@ export function MovieCard({
         )}
 
         {/* Hover Action Overlay */}
-        <div className={`absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-100 md:opacity-0 md:group-hover/card:opacity-100 transition-opacity duration-200 flex flex-col justify-end ${isContinueWatching && item.continueWatchingProgress != null ? 'p-2 md:p-3 pb-16' : 'p-2 md:p-3'} z-20`}>
-          <p className="text-xs font-bold text-white line-clamp-1 mb-1 drop-shadow">
+        <div className={`absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent opacity-100 md:opacity-0 md:group-hover/card:opacity-100 transition-opacity duration-200 flex flex-col justify-end ${isContinueWatching && item.continueWatchingProgress != null ? 'p-2.5 pb-16' : 'p-2.5'} z-20`}>
+          <p className="text-[11px] font-medium text-white line-clamp-1 mb-1">
             {item.title}
           </p>
 
-          <div className="flex items-center gap-1.5 text-[10px] text-[#cccccc] mb-2.5">
+          <div className="flex items-center gap-1.5 text-[10px] text-[#b3b3b3] mb-2.5">
             {/* Hidden until the viewer has given us a real signal (likes/history).
                 computeMatch returns null otherwise, and "0%" would be a lie. */}
             {match !== null && (
               <>
-                <span className="text-[#46d369] font-bold">{match}%</span>
-                <span>•</span>
+                <span className="text-[#46d369] font-semibold">{match}%</span>
+                <span className="text-white/25">·</span>
               </>
             )}
-            <span className="px-1 border border-white/40 rounded-[2px]">{item.rating}</span>
-            <span>•</span>
+            <span className="text-[9px] font-semibold uppercase tracking-[0.1em] border border-white/25 px-1 py-px text-[#cfcfcf]">{item.rating}</span>
+            <span className="text-white/25">·</span>
             <span>{item.type === 'movie' ? item.duration : `${item.seasonsCount || 1}S`}</span>
           </div>
 
@@ -94,7 +94,7 @@ export function MovieCard({
                 e.stopPropagation();
                 onPlay(item);
               }}
-              className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-[#e6e6e6] text-black flex items-center justify-center transition-transform hover:scale-110 shadow-lg"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-black transition-colors hover:bg-[#e6e6e6]"
               title="Play Stream"
             >
               <Play className="w-3.5 h-3.5 md:w-4 md:h-4 fill-black text-black ml-0.5" />
@@ -105,7 +105,7 @@ export function MovieCard({
                 e.stopPropagation();
                 onToggleMyList(item);
               }}
-              className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/60 hover:bg-black/90 border border-white/40 text-white flex items-center justify-center transition-transform hover:scale-110"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-white/35 bg-black/40 text-white transition-colors hover:bg-black/80"
               title={isInMyList ? 'Remove from My List' : 'Add to My List'}
             >
               {isInMyList ? (
@@ -121,7 +121,7 @@ export function MovieCard({
                   e.stopPropagation();
                   onRemoveContinueWatching(item.id);
                 }}
-                className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/60 hover:bg-black/90 border border-white/40 text-white flex items-center justify-center transition-transform hover:scale-110"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-white/35 bg-black/40 text-white transition-colors hover:bg-black/80"
                 title="Remove from row"
               >
                 <X className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
@@ -133,7 +133,7 @@ export function MovieCard({
                 e.stopPropagation();
                 onOpenDetails(item);
               }}
-              className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/60 hover:bg-black/90 border border-white/40 text-white flex items-center justify-center transition-transform hover:scale-110 ml-auto hidden min-[480px]:flex"
+              className="ml-auto hidden h-7 w-7 items-center justify-center rounded-full border border-white/35 bg-black/40 text-white transition-colors hover:bg-black/80 min-[480px]:flex"
               title="More Info"
             >
               <Info className="w-3.5 h-3.5 md:w-4 md:h-4" />

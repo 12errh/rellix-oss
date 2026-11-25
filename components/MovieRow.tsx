@@ -68,32 +68,35 @@ export function MovieRow({
   };
 
   return (
-    <section className="relative px-6 md:px-16 py-4 group select-none">
-      {/* Row Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg md:text-xl font-bold text-white tracking-tight flex items-center gap-2">
-          <span>{title}</span>
-          <span className="text-xs font-normal text-[#888888]">
-            ({items.length} {items.length === 1 ? 'title' : 'titles'})
+    <section className="relative px-6 md:px-16 pt-8 pb-1 group select-none">
+      {/* Row header: title, count, hairline rule. The rule is what separates
+          sections now — no card shadows, no coloured chip. */}
+      <div className="mb-4 flex items-baseline justify-between gap-6 border-b border-white/10 pb-2.5">
+        <div className="flex min-w-0 items-baseline gap-3">
+          <h2 className="truncate text-[15px] font-medium tracking-[-0.01em] text-white md:text-base">
+            {title}
+          </h2>
+          <span className="shrink-0 text-[11px] tabular-nums text-[#5f5f5f]">
+            {items.length} {items.length === 1 ? 'title' : 'titles'}
           </span>
-        </h2>
+        </div>
 
         {onLoadMore && hasMore && (
           <button
             onClick={onLoadMore}
             disabled={isLoadingMore}
-            className="text-xs text-[#E50914] hover:text-[#ff3844] font-semibold flex items-center gap-1 transition-colors"
+            className="shrink-0 text-[11px] font-medium uppercase tracking-[0.12em] text-[#8a8a8a] transition-colors hover:text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-white/50 disabled:opacity-60"
           >
             {isLoadingMore ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Loading...</span>
-              </>
+              <span className="inline-flex items-center gap-1.5">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Loading</span>
+              </span>
             ) : (
-              <>
-                <span>Load More</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </>
+              <span className="inline-flex items-center gap-1">
+                <span>Load more</span>
+                <ChevronRight className="w-3 h-3" />
+              </span>
             )}
           </button>
         )}
@@ -102,20 +105,20 @@ export function MovieRow({
       {/* Navigation Arrows */}
       <button
         onClick={() => scroll('left')}
-        className={`hidden md:flex absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-28 bg-black/70 hover:bg-black/95 text-white items-center justify-center rounded-r transition-all duration-200 backdrop-blur-sm ${
-          canScrollLeft ? 'opacity-80 md:opacity-0 md:group-hover:opacity-100' : 'opacity-0 pointer-events-none'
+        className={`hidden md:flex absolute left-4 top-[calc(50%+1rem)] -translate-y-1/2 z-20 h-20 w-9 items-center justify-center rounded-[2px] border border-white/10 bg-[#111111]/85 text-white/70 backdrop-blur-sm transition-colors hover:border-white/30 hover:text-white ${
+          canScrollLeft ? 'opacity-100 md:opacity-0 md:group-hover:opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         aria-label="Scroll left"
       >
-        <ChevronLeft className="w-7 h-7" />
+        <ChevronLeft className="w-5 h-5" />
       </button>
 
       <button
         onClick={() => scroll('right')}
-        className="hidden md:flex absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-28 bg-black/70 hover:bg-black/95 text-white items-center justify-center rounded-l opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm"
+        className="hidden md:flex absolute right-4 top-[calc(50%+1rem)] -translate-y-1/2 z-20 h-20 w-9 items-center justify-center rounded-[2px] border border-white/10 bg-[#111111]/85 text-white/70 backdrop-blur-sm transition-colors hover:border-white/30 hover:text-white md:opacity-0 md:group-hover:opacity-100"
         aria-label="Scroll right"
       >
-        <ChevronRight className="w-7 h-7" />
+        <ChevronRight className="w-5 h-5" />
       </button>
 
       {/* Row Items Rail */}
@@ -142,16 +145,16 @@ export function MovieRow({
           <button
             onClick={onLoadMore}
             disabled={isLoadingMore}
-            className="shrink-0 w-36 sm:w-44 md:w-52 h-[220px] sm:h-[260px] md:h-[300px] rounded-lg border-2 border-dashed border-white/20 hover:border-[#E50914] bg-white/5 hover:bg-white/10 flex flex-col items-center justify-center gap-3 text-[#a3a3a3] hover:text-white transition-all group/tile"
+            className="group/tile flex h-[210px] w-[140px] shrink-0 flex-col items-center justify-center gap-3 rounded-[3px] border border-white/10 bg-transparent text-[#6f6f6f] transition-colors hover:border-white/30 hover:text-[#d4d4d4] sm:h-[255px] sm:w-[170px] md:h-[300px] md:w-[200px]"
           >
             {isLoadingMore ? (
-              <Loader2 className="w-8 h-8 text-[#E50914] animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#8a8a8a]" />
             ) : (
               <>
-                <div className="w-12 h-12 rounded-full bg-white/10 group-hover/tile:bg-[#E50914] flex items-center justify-center text-white transition-colors">
-                  <Plus className="w-6 h-6" />
-                </div>
-                <span className="text-xs font-bold uppercase tracking-wider">Load More</span>
+                <Plus className="h-5 w-5" strokeWidth={1.5} />
+                <span className="text-[10px] font-medium uppercase tracking-[0.16em]">
+                  Load more
+                </span>
               </>
             )}
           </button>

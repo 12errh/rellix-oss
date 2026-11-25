@@ -474,10 +474,16 @@ export async function searchMedia(
   // match only by cast/genre or not at all, and ties fall back to the incoming
   // order (i) — meaning TMDB's own popularity order is preserved whenever the
   // title score alone cannot discriminate.
-  const ranked = results
+  const scored = results
     .map((item, i) => ({ item, i, s: searchRankScore(item, q) }))
-    .sort((a, b) => b.s - a.s || a.i - b.i)
-    .map((entry) => entry.item);
+    .sort((a, b) => b.s - a.s || a.i - b.i);
+  // Prefix rescues can pull in neighbours that merely share the prefix
+  // ("aven" also finds "Avenue 5"). Once rescued, keep only rows the ORIGINAL
+  // query still scores; if that would empty the page, keep the ranked list.
+  const meaningful = rescued ? scored.filter((entry) => entry.s > 0) : scored;
+  const ranked = (meaningful.length > 0 ? meaningful : scored).map(
+    (entry) => entry.item
+  );
 
   // A rescue merges page 1 of several queries; deeper pages would mix disjoint
   // result sets, so the feed deliberately ends there.
@@ -501,30 +507,52 @@ export async function searchSuggestions(
   const query = q.trim();
   if (query.length < 2) return [];
 
-  const data = await tmdbCached<TmdbListResult>('/search/multi', {
-    query,
-    page: '1',
-    include_adult: 'false',
-  });
-  if (!data?.results?.length) return [];
-
   const seen = new Set<string>();
   const mapped: MediaItem[] = [];
-  for (const r of data.results) {
-    if (r.media_type !== 'movie' && r.media_type !== 'tv') continue;
-    const key = `t${r.id}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    mapped.push({
-      ...mapTmdbItem(r, tmdbKindForSearch(r)),
-      genres: genreNames(r.genre_ids),
-    });
-  }
+  const collect = (data: TmdbListResult | null) => {
+    for (const r of data?.results ?? []) {
+      if (r.media_type !== 'movie' && r.media_type !== 'tv') continue;
+      const key = `t${r.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      mapped.push({
+        ...mapTmdbItem(r, tmdbKindForSearch(r)),
+        genres: genreNames(r.genre_ids),
+      });
+    }
+  };
 
-  const ranked = mapped
+  collect(
+    await tmdbCached<TmdbListResult>('/search/multi', {
+      query,
+      page: '1',
+      include_adult: 'false',
+    })
+  );
+
+  // A misspelled prefix returns almost nothing from TMDB. Retry the shortened
+  // variants so the dropdown can still offer the title the user meant.
+  if (mapped.length < 2) {
+    for (const variant of variantQueries(query, 2)) {
+      collect(
+        await tmdbCached<TmdbListResult>('/search/multi', {
+          query: variant,
+          page: '1',
+          include_adult: 'false',
+        })
+      );
+      if (mapped.length >= 6) break;
+    }
+  }
+  if (mapped.length === 0) return [];
+
+  const scored = mapped
     .map((item, i) => ({ item, i, s: searchRankScore(item, query) }))
-    .sort((a, b) => b.s - a.s || a.i - b.i)
-    .map((entry) => entry.item);
+    .sort((a, b) => b.s - a.s || a.i - b.i);
+  const meaningful = scored.filter((entry) => entry.s > 0);
+  const ranked = (meaningful.length > 0 ? meaningful : scored).map(
+    (entry) => entry.item
+  );
 
   // Small thumbnails do not need the w500 poster.
   return ranked

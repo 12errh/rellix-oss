@@ -206,8 +206,7 @@ export function AnimeTab({
               'Genre',
               genres.map((g) => ({ value: g.id, label: g.label })),
               genreId,
-              setGenreId,
-              true
+              setGenreId
             ),
             facet(
               'year',
@@ -219,8 +218,7 @@ export function AnimeTab({
                 ),
               ],
               year,
-              setYear,
-              true
+              setYear
             ),
             ...(isKid
               ? []
@@ -237,8 +235,7 @@ export function AnimeTab({
                       { value: '18+', label: '18+' },
                     ],
                     rating,
-                    setRating,
-                    true
+                    setRating
                   ),
                   facet(
                     'mature',

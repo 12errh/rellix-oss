@@ -20,6 +20,15 @@ interface HeroCarouselProps {
   onToggleMyList: (media: MediaItem) => void;
 }
 
+/**
+ * Editorial hero.
+ *
+ * The previous version stacked a brand mark, an uppercase headline, a maturity
+ * badge in the corner and a second maturity badge in the metadata line — five
+ * competing signals over the same still. This one keeps a single reading path:
+ * index → eyebrow → title → facts → logline → actions → rail position. Rules
+ * and a muted palette carry the structure instead of shadows and glows.
+ */
 export function HeroCarousel({
   items,
   onPlay,
@@ -45,7 +54,7 @@ export function HeroCarousel({
     }, 7000);
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      clearInterval(timerRef.current ?? undefined);
     };
   }, [carouselItems.length, isHovered]);
 
@@ -62,157 +71,158 @@ export function HeroCarousel({
   if (!currentItem) return null;
 
   const isInMyList = myListIds.includes(currentItem.id);
+  const index = String(currentIndex + 1).padStart(2, '0');
+  const total = String(carouselItems.length).padStart(2, '0');
 
   return (
     <section
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full min-h-[580px] md:min-h-[660px] lg:min-h-[720px] flex items-center overflow-hidden px-6 md:px-16 pt-12 pb-24 select-none group"
+      className="relative w-full min-h-[600px] md:min-h-[680px] lg:min-h-[740px] flex items-end overflow-hidden select-none group"
     >
-      {/* Background Backdrop Image with smooth fade transition */}
+      {/* Backdrop */}
       <div className="absolute inset-0 z-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           key={currentItem.id}
           src={currentItem.backdropUrl || currentItem.posterUrl}
-          alt={currentItem.title}
-          className="w-full h-full object-cover object-top md:object-center hero-kenburns"
+          alt=""
+          aria-hidden
+          className="w-full h-full object-cover object-[center_25%] md:object-center hero-kenburns"
         />
 
-        {/* Rellix Iconic Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-[#111111]/85 to-transparent w-full md:w-3/4 z-1" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/30 to-transparent z-1" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#111111]/80 via-transparent to-transparent h-28 z-1" />
+        {/* Scrim: heavy on the left for text contrast, fading into the page on
+            the right and bottom so the first row starts on the same surface. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-[#111111]/80 to-[#111111]/10 md:to-transparent z-[1]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/35 to-transparent z-[1]" />
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#111111]/85 to-transparent z-[1]" />
       </div>
 
-      {/* Hero Content Information */}
-      <div className="relative z-10 max-w-2xl space-y-4 md:space-y-5 animate-in fade-in slide-in-from-bottom-3 duration-500">
-        {/* Rellix Brand Tag */}
-        <div className="flex items-center gap-2">
-          <span className="text-[#E50914] font-black text-2xl tracking-tighter">R</span>
-          <span className="text-white text-xs md:text-sm font-black tracking-[0.25em] uppercase">
-            {currentItem.type === 'movie' ? 'FILM' : 'SERIES'}
-          </span>
-          {/* The yellow NEW RELEASE badge that used to sit here was removed: it
-              clashed with the red brand mark beside it and read as an ad overlay
-              rather than part of the title block. `isNewRelease` is still set on
-              the data and is used by the search page's Trending chips, so nothing
-              upstream changed. */}
-        </div>
+      {/* Content */}
+      <div className="relative z-10 w-full px-6 md:px-16 pb-14 md:pb-20">
+        <div key={currentItem.id} className="max-w-[44rem] hero-rise">
+          {/* Publication line: index, type, year — reads like a masthead */}
+          <div className="mb-5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8a8a8a]">
+            <span className="text-[#E50914]">Featured</span>
+            <span className="h-px w-8 bg-white/20" aria-hidden />
+            <span>
+              {index} / {total}
+            </span>
+            <span className="h-px w-8 bg-white/10" aria-hidden />
+            <span className="text-[#a3a3a3]">
+              {currentItem.type === 'movie' ? 'Film' : 'Series'}
+            </span>
+          </div>
 
-        {/* Headline / Title */}
-        <div className="space-y-1">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[4.25rem] font-semibold leading-[0.98] tracking-[-0.035em] text-white">
+            {currentItem.title}
+          </h1>
+
           {currentItem.heroHeadline && (
-            <p className="text-xs md:text-sm font-bold uppercase tracking-[0.3em] text-[#cccccc]">
+            <p className="mt-3 text-sm md:text-[15px] font-normal leading-relaxed text-[#cfcfcf]">
               {currentItem.heroHeadline}
             </p>
           )}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase text-white tracking-tight leading-none drop-shadow-md">
-            {currentItem.title}
-          </h1>
-        </div>
 
-        {/* Metadata info */}
-        <div className="flex items-center flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-[#cccccc]">
-          {heroMatch !== null && (
-            <>
-              <span className="text-[#46d369] font-bold">{heroMatch}% Match</span>
-              <span>•</span>
-            </>
-          )}
-          <span>{currentItem.releaseYear}</span>
-          <span>•</span>
-          <span>
-            {currentItem.type === 'movie'
-              ? currentItem.duration || '2h 10m'
-              : `${currentItem.seasonsCount || 2} ${
-                  (currentItem.seasonsCount || 2) === 1 ? 'Season' : 'Seasons'
-                }`}
-          </span>
-          <span className="px-1.5 py-0.2 border border-white/60 text-white rounded text-[10px] font-bold">
-            {currentItem.rating}
-          </span>
-        </div>
-
-        {/* Synopsis Overview */}
-        <p className="text-xs sm:text-sm md:text-base text-[#e5e5e5] line-clamp-3 leading-relaxed max-w-xl drop-shadow">
-          {currentItem.overview}
-        </p>
-
-        {/* CTA Buttons */}
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            onClick={() => onPlay(currentItem)}
-            className="flex items-center gap-2 px-6 md:px-8 py-2.5 md:py-3 rounded bg-white hover:bg-[#e6e6e6] text-black font-bold text-sm md:text-base transition-all transform active:scale-95 shadow-xl hover:shadow-2xl"
-          >
-            <Play className="w-5 h-5 fill-black text-black ml-0.5" />
-            <span>Play</span>
-          </button>
-
-          <button
-            onClick={() => onOpenDetails(currentItem)}
-            className="flex items-center gap-2 px-5 md:px-7 py-2.5 md:py-3 rounded bg-[#6d6d6e]/75 hover:bg-[#6d6d6e]/50 text-white font-semibold text-sm md:text-base backdrop-blur-md transition-all active:scale-95"
-          >
-            <Info className="w-5 h-5" />
-            <span>More Info</span>
-          </button>
-
-          <button
-            onClick={() => onToggleMyList(currentItem)}
-            className="p-2.5 md:p-3 rounded-full border border-white/40 bg-black/40 text-white hover:bg-white/20 transition-all hover:scale-105"
-            title={isInMyList ? 'Remove from My List' : 'Add to My List'}
-          >
-            {isInMyList ? (
-              <Check className="w-5 h-5 text-[#46d369]" />
-            ) : (
-              <Plus className="w-5 h-5" />
+          {/* Facts: one line, hairline separators, no chips */}
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-[12px] md:text-[13px] text-[#b3b3b3]">
+            {heroMatch !== null && (
+              <span className="font-medium text-[#46d369]">{heroMatch}% match</span>
             )}
-          </button>
+            <span className="tabular-nums">{currentItem.releaseYear}</span>
+            <span className="h-3 w-px bg-white/20" aria-hidden />
+            <span>
+              {currentItem.type === 'movie'
+                ? currentItem.duration || '2h 10m'
+                : `${currentItem.seasonsCount || 2} ${
+                    (currentItem.seasonsCount || 2) === 1 ? 'season' : 'seasons'
+                  }`}
+            </span>
+            <span className="h-3 w-px bg-white/20" aria-hidden />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a8a8a]">
+              {currentItem.rating}
+            </span>
+            {currentItem.genres?.length > 0 && (
+              <>
+                <span className="h-3 w-px bg-white/20" aria-hidden />
+                <span className="truncate">{currentItem.genres.slice(0, 2).join(' · ')}</span>
+              </>
+            )}
+          </div>
+
+          <p className="mt-5 max-w-xl text-sm md:text-[15px] leading-[1.7] text-[#b8b8b8] line-clamp-3">
+            {currentItem.overview}
+          </p>
+
+          {/* Actions */}
+          <div className="mt-7 flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => onPlay(currentItem)}
+              className="inline-flex items-center gap-2 rounded-[2px] bg-white px-6 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-[#e6e6e6] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 active:scale-[0.99]"
+            >
+              <Play className="w-4 h-4 fill-black text-black" />
+              <span>Play now</span>
+            </button>
+
+            <button
+              onClick={() => onOpenDetails(currentItem)}
+              className="inline-flex items-center gap-2 rounded-[2px] border border-white/25 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:border-white/60 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.99]"
+            >
+              <Info className="w-4 h-4" />
+              <span>Details</span>
+            </button>
+
+            <button
+              onClick={() => onToggleMyList(currentItem)}
+              className="inline-flex items-center gap-2 rounded-[2px] border border-transparent px-3 py-2.5 text-sm font-medium text-[#cfcfcf] transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              title={isInMyList ? 'Remove from My List' : 'Add to My List'}
+            >
+              {isInMyList ? (
+                <Check className="w-4 h-4 text-[#46d369]" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+              <span>{isInMyList ? 'In My List' : 'My List'}</span>
+            </button>
+          </div>
+
+          {/* Rail position: segments, not dots */}
+          <div className="mt-9 flex items-center gap-2" role="tablist" aria-label="Featured titles">
+            {carouselItems.map((item, idx) => (
+              <button
+                key={item.id}
+                onClick={() => setCurrentIndex(idx)}
+                role="tab"
+                aria-selected={idx === currentIndex}
+                aria-label={`Featured title ${idx + 1}: ${item.title}`}
+                className={`h-[3px] transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/60 ${
+                  idx === currentIndex ? 'w-9 bg-[#E50914]' : 'w-2.5 bg-white/20 hover:bg-white/40'
+                }`}
+              />
+            ))}
+            <span className="ml-2 text-[10px] tabular-nums tracking-[0.18em] text-[#5f5f5f]">
+              {index} / {total}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Side Carousel Navigation Buttons */}
+      {/* Arrow controls: squares, hairline, no blur or glow */}
       <button
         onClick={handlePrev}
-        className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 hidden md:flex items-center justify-center transition-all opacity-80 md:opacity-0 md:group-hover:opacity-100 hover:scale-110 shadow-xl backdrop-blur-sm"
-        title="Previous title"
+        className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 hidden md:flex h-10 w-10 items-center justify-center rounded-[2px] border border-white/15 bg-black/30 text-white/80 backdrop-blur-sm transition-colors hover:border-white/40 hover:text-white md:opacity-0 md:group-hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+        aria-label="Previous featured title"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="w-5 h-5" />
       </button>
 
       <button
         onClick={handleNext}
-        className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 hidden md:flex items-center justify-center transition-all opacity-80 md:opacity-0 md:group-hover:opacity-100 hover:scale-110 shadow-xl backdrop-blur-sm"
-        title="Next title"
+        className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 hidden md:flex h-10 w-10 items-center justify-center rounded-[2px] border border-white/15 bg-black/30 text-white/80 backdrop-blur-sm transition-colors hover:border-white/40 hover:text-white md:opacity-0 md:group-hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+        aria-label="Next featured title"
       >
-        <ChevronRight className="w-6 h-6" />
+        <ChevronRight className="w-5 h-5" />
       </button>
-
-      {/* Maturity Badge */}
-      <div className="absolute right-6 md:right-16 bottom-24 z-10 flex items-center gap-3">
-        <div className="px-3 py-1 bg-black/60 border-l-2 border-white text-xs font-bold text-[#e5e5e5] tracking-wider backdrop-blur-sm">
-          {currentItem.rating}
-        </div>
-      </div>
-
-      {/* Bottom Carousel Dot Indicators */}
-      <div className="absolute bottom-20 md:bottom-28 left-6 md:left-16 z-20 flex items-center gap-2">
-        {carouselItems.map((item, idx) => (
-          <button
-            key={item.id}
-            onClick={() => setCurrentIndex(idx)}
-            className={`transition-all rounded-full h-1.5 ${
-              idx === currentIndex
-                ? 'w-8 bg-[#E50914]'
-                : 'w-2 bg-white/30 hover:bg-white/60'
-            }`}
-            title={`Slide ${idx + 1}: ${item.title}`}
-          />
-        ))}
-        <span className="text-[10px] text-[#888888] font-mono ml-2">
-          {currentIndex + 1} / {carouselItems.length}
-        </span>
-      </div>
     </section>
   );
 }

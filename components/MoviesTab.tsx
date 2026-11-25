@@ -101,8 +101,7 @@ export function MoviesTab({
               'Genre',
               genres.map((g) => ({ value: g.id, label: g.label })),
               genreId,
-              setGenreId,
-              true
+              setGenreId
             ),
             facet(
               'year',
@@ -114,8 +113,7 @@ export function MoviesTab({
                 ),
               ],
               year,
-              setYear,
-              true
+              setYear
             ),
           ]}
         />

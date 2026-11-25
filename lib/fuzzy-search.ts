@@ -98,36 +98,78 @@ export function searchRankScore(
 /**
  * Alternative TMDB queries to try when the exact phrase barely matches.
  *
- * Root cause of "searching bhoot bangla finds nothing while Bhooth Bangla
- * exists": TMDB's `/search/multi` is near-exact — one missing letter inside a
- * word ("bhoot" vs "bhooth") yields zero results, and then every fallback layer
- * in the app is also substring-based, so the user sees an empty page.
+ * TMDB's `/search/multi` is near-exact: a misspelled word ("avengres",
+ * "interstelar", "bhoot bangla") returns nothing useful, and every fallback
+ * layer in the app is substring-based too, so the user sees an empty page.
  *
- * The variants below attempt progressively shorter prefixes of the query,
- * cheapest and most likely first: "bhoot bangla" -> "bhoot". A one-word prefix
- * matches TMDB's per-word prefix index, which does catch Bhooth Bangla and any
- * other title starting with that word. Results are merged and then RANKED
- * against the ORIGINAL query with searchRankScore, so the rescued items cannot
- * bury the best match.
+ * TMDB does match *word prefixes*, so the cheapest rescue is to shorten the
+ * words that are likely wrong. Trimming one or two letters off the end turns
+ * "avengres" into "aveng" and "endgme" into "endg", which still hits
+ * "Avengers: Endgame". Trailing-word drops stay as the last resort for queries
+ * padded with extras ("iron man 3 hindi").
  *
- * Bounded: at most maxVariants entries beyond the original, which bounds the
- * extra TMDB requests per search to the same number. Each attempt is
- * unstable_cache'd for an hour, so repeat searches for the same typo'd query do
- * not re-hit TMDB.
+ * Results are merged and RANKED against the ORIGINAL query with
+ * searchRankScore, so rescued rows cannot bury the best match.
+ *
+ * Bounded: at most maxVariants entries beyond the original, so a search costs
+ * at most 1 + maxVariants TMDB requests.
  */
-export function variantQueries(rawQuery: string, maxVariants = 3): string[] {
+export function variantQueries(rawQuery: string, maxVariants = 4): string[] {
   const q = rawQuery.trim().replace(/\s+/g, ' ');
   if (!q) return [];
 
   const out: string[] = [];
   const words = q.split(' ');
-  // Drop trailing words one at a time: "iron man 3 hindi" -> "iron man 3" ->
-  // "iron man" -> "iron". Stop before a one-letter fragment.
+  const seen = new Set<string>([q.toLowerCase()]);
+
+  const push = (v: string) => {
+    const key = v.trim().toLowerCase();
+    if (!seen.has(key) && v.replace(/[^a-z0-9]/gi, '').length >= 3) {
+      seen.add(key);
+      out.push(v.trim());
+    }
+  };
+
+  // A misspelling diverges at an unknown letter, so TMDB only accepts the
+  // SHORT prefix that both spellings still share ("avengres" -> "aveng",
+  // "interstelar" -> "interste"). Cut long words aggressively; short words
+  // lose one letter at a time.
+  const prefixes = (w: string) => {
+    const letters = w.replace(/[^a-z0-9]/gi, '');
+    const lens = letters.length > 6 ? [5, 6, 4] : [letters.length - 1, letters.length - 2];
+    const res: string[] = [];
+    for (const len of lens) {
+      if (len >= 4 && len < letters.length) res.push(letters.slice(0, len));
+    }
+    return res;
+  };
+
+  // 1. Drop trailing padding first: "iron man 3 hindi" -> "iron man 3".
   for (let n = words.length - 1; n >= 1; n--) {
     const v = words.slice(0, n).join(' ');
     if (v.replace(/[^a-z0-9]/gi, '').length < 3) break;
-    out.push(v);
-    if (out.length >= maxVariants) break;
+    push(v);
+    if (out.length >= maxVariants) return out;
+  }
+
+  // 2. Single-token prefixes of the longest words. This is the rescue that
+  //    survives a fully misspelled phrase, where TMDB cannot AND-match.
+  const tokens = [...words].sort((a, b) => b.length - a.length);
+  for (const t of tokens) {
+    for (const p of prefixes(t)) {
+      push(p);
+      if (out.length >= maxVariants) return out;
+    }
+  }
+
+  // 3. Keep the leading words (often right) and shorten only the last word:
+  //    "avengers endgme" -> "avengers endg".
+  if (words.length > 1) {
+    const head = words.slice(0, -1).join(' ');
+    for (const p of prefixes(words[words.length - 1])) {
+      push(`${head} ${p}`);
+      if (out.length >= maxVariants) return out;
+    }
   }
   return out;
 }

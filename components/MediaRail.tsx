@@ -98,14 +98,17 @@ export function MediaRail({
       <div
         ref={holderRef}
         aria-hidden
-        className="px-6 md:px-16 py-4"
+        className="px-6 md:px-16 pt-8 pb-1"
       >
-        <div className="mb-3 h-4 w-32 animate-pulse rounded bg-white/10" />
-        <div className="flex gap-3">
+        <div className="mb-4 flex items-baseline justify-between gap-6 border-b border-white/10 pb-2.5">
+          <div className="h-4 w-40 animate-pulse bg-white/[0.07]" />
+          <div className="h-3 w-14 animate-pulse bg-white/[0.05]" />
+        </div>
+        <div className="flex gap-3 md:gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-[220px] sm:h-[260px] md:h-[300px] w-36 sm:w-44 md:w-52 shrink-0 animate-pulse rounded-lg bg-white/[0.06]"
+              className="h-[210px] w-[140px] shrink-0 animate-pulse rounded-[3px] bg-white/[0.045] sm:h-[255px] sm:w-[170px] md:h-[300px] md:w-[200px]"
               style={{ animationDelay: `${i * 80}ms` }}
             />
           ))}
