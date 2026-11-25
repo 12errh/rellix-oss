@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X,
   Play,
@@ -46,6 +46,16 @@ export function MediaDetailsModal({
   const [showTrailer, setShowTrailer] = useState(false);
   const [fetchedEpisodes, setFetchedEpisodes] = useState<{ season: number; episodes: any[] } | null>(null);
   const [recsState, setRecsState] = useState<{ key: string; items: MediaItem[] } | null>(null);
+  const [closing, setClosing] = useState(false);
+  const closingRef = useRef(false);
+  // The parent unmounts this dialog the moment it clears its state, so the
+  // close is held for the exit transition instead of cutting the panel.
+  const requestClose = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setClosing(true);
+    window.setTimeout(onClose, 190);
+  }, [onClose]);
   const isLoadingEpisodes = Boolean(
     media && media.type !== 'movie' && media.tmdbId && (!fetchedEpisodes || fetchedEpisodes.season !== selectedSeason)
   );
@@ -113,6 +123,16 @@ export function MediaDetailsModal({
     return () => controller.abort();
   }, [media]);
 
+  // The dialog owns Escape so it can play its exit before the parent clears
+  // the selected media.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') requestClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [requestClose]);
+
   if (!media) return null;
 
   const currentMedia: MediaItem = {
@@ -161,14 +181,19 @@ export function MediaDetailsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/85 p-0 backdrop-blur-sm sm:p-6">
+    <div
+      className="modal-backdrop fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/85 p-0 backdrop-blur-sm sm:p-6"
+      data-closing={closing}
+      onClick={requestClose}
+    >
       <div
-        className="relative my-0 w-full max-w-5xl overflow-hidden border border-white/[0.08] bg-[#0d0d0d] text-white sm:my-6"
+        className="modal-panel relative my-0 w-full max-w-5xl overflow-hidden border border-white/[0.08] bg-[#0d0d0d] text-white sm:my-6"
+        data-closing={closing}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
-          onClick={onClose}
+          onClick={requestClose}
           aria-label="Close details"
           className="absolute right-3 top-3 z-30 flex h-8 w-8 items-center justify-center border border-white/25 bg-black/60 text-white backdrop-blur transition-colors hover:border-white/70"
         >

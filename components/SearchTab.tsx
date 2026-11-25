@@ -904,7 +904,7 @@ export function SearchTab({
                   <p className="mb-3 text-[9px] font-medium uppercase tracking-[0.2em] text-[#6f6f6f]">
                     Did you mean
                   </p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                  <div className="grid-stagger grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                     {suggestions.map((item) => (
                       <MovieCard
                         variant="grid"
@@ -935,7 +935,7 @@ export function SearchTab({
             )}
           </div>
         ) : (
-          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid-stagger mt-4 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {restMatches.map((item) => (
               <MovieCard
                 variant="grid"

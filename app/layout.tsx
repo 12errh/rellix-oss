@@ -29,6 +29,9 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className="dark">
       <body suppressHydrationWarning className="bg-[#111111] text-[#e5e5e5] antialiased min-h-screen font-sans selection:bg-[#E50914] selection:text-white overflow-x-hidden">
+        <noscript>
+          <style>{`.reveal{opacity:1 !important;transform:none !important}`}</style>
+        </noscript>
         {children}
         <PwaRegister />
         <InstallPromptLazy />

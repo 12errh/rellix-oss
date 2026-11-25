@@ -266,7 +266,7 @@ export function BrowserTab({ onPlay, onOpenDetails, myListIds, onToggleMyList, i
 
       <div className="px-6 pt-6 md:px-16">
         {items.length === 0 && isLoadingFirst ? (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid-stagger grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {Array.from({ length: 12 }, (_, i) => (
               <div key={i} className="aspect-[2/3] animate-pulse rounded-[3px] bg-[#1b1b1b]" />
             ))}
@@ -288,7 +288,7 @@ export function BrowserTab({ onPlay, onOpenDetails, myListIds, onToggleMyList, i
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid-stagger grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {items.map((item) => (
               <MovieCard
                 variant="grid"

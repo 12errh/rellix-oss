@@ -106,7 +106,7 @@ export function Sidebar({
             <button
               key={item.id}
               onClick={() => onSelectTab(item.id)}
-              className={`relative flex items-center gap-4 w-full px-3 py-3 rounded-lg text-sm font-medium transition-all group focus:outline-none ${
+              className={`relative flex items-center gap-4 w-full px-3 py-3 rounded-lg text-sm font-medium transition-all active:scale-[0.98] group focus:outline-none ${
                 isActive
                   ? 'text-white font-semibold'
                   : 'text-[#8c8c8c] hover:text-white hover:bg-white/5'

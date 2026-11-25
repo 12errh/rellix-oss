@@ -269,7 +269,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d] px-5 py-10 text-white sm:px-10 sm:py-14">
+    <main className="page-enter min-h-screen bg-[#0d0d0d] px-5 py-10 text-white sm:px-10 sm:py-14">
       <div className="mx-auto max-w-4xl">
         <header className="flex items-end justify-between gap-4 pb-6">
           <div>

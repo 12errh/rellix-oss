@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { MediaItem } from '@/types/movie';
 import { MediaRail } from './MediaRail';
+import { Reveal } from './Reveal';
 import { buildSections, railQuery, HomeRail } from '@/lib/home-rails';
 
 interface HomeSectionsProps {
@@ -64,7 +65,7 @@ export function HomeSections({
               </header>
             )}
 
-            <div>
+            <Reveal>
               {visible.map((rail) => (
                 <MediaRail
                   key={rail.id}
@@ -80,7 +81,7 @@ export function HomeSections({
                   onToggleMyList={onToggleMyList}
                 />
               ))}
-            </div>
+            </Reveal>
 
             {collapsible && (
               <div className="px-6 md:px-16">

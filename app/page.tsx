@@ -23,6 +23,7 @@ import { MoviesTab } from '@/components/MoviesTab';
 import { TVShowsTab } from '@/components/TVShowsTab';
 import { MyListTab } from '@/components/MyListTab';
 import { BrowserTab } from '@/components/BrowserTab';
+import { Reveal } from '@/components/Reveal';
 /**
  * The player and details modals are the two heaviest components in the bundle
  * (603 and 462 lines, plus the lib/embed-urls provider plumbing) and
@@ -259,9 +260,8 @@ export default function Home() {
     };
   }, [loadProfileData, loadHomeFeed]);
 
-  // Keyboard shortcuts: Escape closes the details dialog and "/" opens search.
-  // The player owns its own Escape handler because closing it must persist
-  // watch progress, not just unmount the iframe.
+  // Keyboard shortcuts: "/" opens search. The player and the details dialog
+  // own their Escape handlers because each has to play an exit before unmount.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -270,16 +270,14 @@ export default function Home() {
         target?.tagName === 'TEXTAREA' ||
         Boolean(target?.isContentEditable);
 
-      if (e.key === 'Escape') {
-        if (selectedDetailsMedia) setSelectedDetailsMedia(null);
-      } else if (e.key === '/' && !typing && activeTab !== 'search') {
+      if (e.key === '/' && !typing && activeTab !== 'search') {
         e.preventDefault();
         setActiveTab('search');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedDetailsMedia, activeTab]);
+  }, [activeTab]);
 
   // --- Profile flow (Netflix-style) ---
   const enterProfile = async (profile: UserProfile) => {
@@ -609,6 +607,7 @@ export default function Home() {
 
         {/* Tab Views */}
         <main className="flex-1">
+          <div key={activeTab} className="page-enter">
           {activeTab === 'home' && (
             <div className="pb-24">
               {isInitialLoading && <HomeSkeleton />}
@@ -624,7 +623,7 @@ export default function Home() {
 
               {/* Row 1: Continue Watching for User */}
               {continueWatchingItems.length > 0 && (
-              <div className="relative z-20 pt-2">
+              <Reveal className="relative z-20 pt-2">
                 <MovieRow
                   title="Continue Watching"
                   items={continueWatchingItems}
@@ -636,11 +635,11 @@ export default function Home() {
                   onRemoveContinueWatching={handleRemoveContinueWatching}
                 />
 
-              </div>
+              </Reveal>
               )}
 
               {/* Top 10 Movies Today */}
-              <div className="relative z-20">
+              <Reveal className="relative z-20">
                 <Top10Row
                   title="Top 10 Movies Today"
                   items={visibleTop10Movies.length > 0 ? visibleTop10Movies : fallbackTop10Movies}
@@ -649,10 +648,10 @@ export default function Home() {
                   myListIds={myListIds}
                   onToggleMyList={handleToggleMyList}
                 />
-              </div>
+              </Reveal>
 
               {/* Top 10 TV Today */}
-              <div className="relative z-20">
+              <Reveal className="relative z-20">
                 <Top10Row
                   title="Top 10 TV Shows Today"
                   items={visibleTop10TV.length > 0 ? visibleTop10TV : fallbackTop10Shows}
@@ -661,7 +660,7 @@ export default function Home() {
                   myListIds={myListIds}
                   onToggleMyList={handleToggleMyList}
                 />
-              </div>
+              </Reveal>
 
               <HomeSections
                 adaptive={adaptiveRails}
@@ -738,6 +737,7 @@ export default function Home() {
               onBrowseExplore={() => setActiveTab('home')}
             />
           )}
+          </div>
         </main>
 
         {/* Rellix Footer */}

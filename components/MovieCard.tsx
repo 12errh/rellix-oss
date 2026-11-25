@@ -32,7 +32,7 @@ export function MovieCard({
   const match = matchFor(item);
 
   return (
-    <div className={`relative group/card cursor-pointer transition-transform duration-300 select-none hover:-translate-y-1 hover:z-30 ${variant === 'grid' ? 'w-full' : 'flex-none w-[140px] sm:w-[170px] md:w-[200px]'}`}>
+    <div className={`tap relative group/card cursor-pointer transition-transform duration-[260ms] ease-[var(--ease-editorial)] select-none hover:-translate-y-1 hover:z-30 ${variant === 'grid' ? 'w-full' : 'flex-none w-[140px] sm:w-[170px] md:w-[200px]'}`}>
       <div
         onClick={() => onOpenDetails(item)}
         className="relative aspect-[2/3] w-full overflow-hidden rounded-[3px] bg-[#1c1c1c] border border-white/[0.07] group-hover/card:border-white/25 transition-colors"

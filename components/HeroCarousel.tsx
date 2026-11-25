@@ -100,7 +100,7 @@ export function HeroCarousel({
 
       {/* Content */}
       <div className="relative z-10 w-full px-6 md:px-16 pb-14 md:pb-20">
-        <div key={currentItem.id} className="max-w-[44rem] hero-rise">
+        <div key={currentItem.id} className="max-w-[44rem] hero-stagger">
           {/* Publication line: index, type, year — reads like a masthead */}
           <div className="mb-5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8a8a8a]">
             <span className="text-[#E50914]">Featured</span>

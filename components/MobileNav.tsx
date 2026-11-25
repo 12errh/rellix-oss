@@ -29,7 +29,7 @@ export function MobileNav({ activeTab, onSelectTab }: MobileNavProps) {
             <button
               key={item.id}
               onClick={() => onSelectTab(item.id)}
-              className={`flex flex-col items-center gap-1 min-w-[56px] px-1.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${
+              className={`flex flex-col items-center gap-1 min-w-[56px] px-1.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors active:scale-95 ${
                 isActive ? 'text-white' : 'text-[#8c8c8c] hover:text-white'
               }`}
             >
